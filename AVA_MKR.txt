@@ -19,7 +19,7 @@
 
 */
 
-#include <SPI.h>
+#include <SPI.h> 
 #include <WiFi101.h>
 
 int led =  LED_BUILTIN;             // used to turn LED on and off
