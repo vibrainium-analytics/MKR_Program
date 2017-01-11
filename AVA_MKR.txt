@@ -17,6 +17,7 @@
     http://192.168.1.1/A  Would send data from each of the 3 axes.
     http://192.168.1.1/X  Would send data from the X axis only.  etc...
 
+This is my change…
 */
 
 #include <SPI.h> 
