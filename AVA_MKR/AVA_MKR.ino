@@ -126,7 +126,7 @@ void loop() {
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
-          colabel = X + sp + Y + sp + Z;            // set column labels for output
+          colabel = X + sp + Y + sp + Z + nl;       // set column labels for output
           client.print(colabel);
           
           // data acquisition        
@@ -180,7 +180,7 @@ void loop() {
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
-          colabel = C;                              // set column label for output
+          colabel = C + nl;                         // set column label for output
           client.print(colabel);
          
           int l = 0;                                // initialize outer loop counter
@@ -290,7 +290,7 @@ void loop() {
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
-          colabel = X;
+          colabel = X + nl;
           client.print(colabel);                    // set column label
          
           int l = 0;                                // initialize outer loop counter
@@ -335,7 +335,7 @@ void loop() {
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
-          colabel = Y;
+          colabel = Y + nl;
           client.print(colabel);                    // set column label
          
           int l = 0;                                // initialize outer loop counter
@@ -380,7 +380,7 @@ void loop() {
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
-          colabel = Z;
+          colabel = Z + nl;
           client.print(colabel);                    // set column label
          
           int l = 0;                                // initialize outer loop counter
