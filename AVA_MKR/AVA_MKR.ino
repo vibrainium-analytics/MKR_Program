@@ -23,6 +23,7 @@
 #include <WiFi101.h>
 
 int led =  LED_BUILTIN;             // used to turn LED on and off
+int count = 0;                      // inactivity counter
 char ssid[] = "wifi101-network";    // wireless access point name
 String currentLine;                 // stores incomming data
 short cnt3 = 60;                    // number of times to run outer loop
@@ -78,7 +79,8 @@ void loop() {
   WiFiClient client = server.available();   // listen for incoming clients
   if (client) {                             // if you get a client
     currentLine = "";                       // initialize incoming data string
-    while (client.connected()) {            // loop while the client is connected
+    while (client.connected()) {
+      // loop while the client is connected
       if (client.available()) {             // if there are bytes to read from the client,
         char in = client.read();            // read a byte
         if (in == '\n') {                   // check if the byte is a newline character
@@ -100,7 +102,6 @@ void loop() {
             client.print("Click <a href=\"/C\">here</a> to request combined axes data<br>");
             client.print("Click <a href=\"/H\">here</a> turn the LED on<br>");
             client.print("Click <a href=\"/L\">here</a> turn the LED off<br>");
-            client.print("Click <a href=\"/R\">here</a> to reset<br>");
             client.print("Click <a href=\"/S\">here</a> to run accelerometer self test<br>");
             client.print("Click <a href=\"/X\">here</a> to request x axis data<br>");
             client.print("Click <a href=\"/Y\">here</a> to request y axis data<br>");
@@ -114,7 +115,7 @@ void loop() {
           }
         }
         else if (in != '\r') {              // if you got anything else but a carriage return
-          currentLine += in;                // add it to the end of the currentLine (this is input from the user)
+          currentLine += in;                // add it to the end of the currentLine (this is input from the user)         
         }
 
         // Check the user input 
@@ -170,9 +171,10 @@ void loop() {
           }
           currentLine = "";                         // reset current line to prepare for next request
           client.println();                         // The HTTP response ends with a blank line:
+          count = 0;                                // reset inactivity counter
           break;                                    // break out of the while loop
         }
-        
+
         if (currentLine.endsWith("GET /C")) {
           
           // User requested data, Send header
@@ -216,19 +218,18 @@ void loop() {
           }
           currentLine = "";                         // reset current line to prepare for next request
           client.println();                         // The HTTP response ends with a blank line:
+          count = 0;                                // reset inactivity counter
           break;                                    // break out of the while loop
         }
 
         if (currentLine.endsWith("GET /H")) {
           digitalWrite(led, HIGH);                  // turns the LED on
+          count = 0;
         }
         
         if (currentLine.endsWith("GET /L")) {
           digitalWrite(led, LOW);                   // turns the LED off
-        }
-        
-        if (currentLine.endsWith("GET /R")) {
-          digitalWrite(9, LOW);                     // send a 0 from digital pin 9 to reset pin
+          count = 0;
         }
         
         if (currentLine.endsWith("GET /S")) {
@@ -280,6 +281,7 @@ void loop() {
           digitalWrite(11, LOW);                    // turn off self test
           currentLine = "";                         // reset current line to prepare for next request
           client.println();                         // The HTTP response ends with a blank line:
+          count = 0;                                // reset inactivity counter
           break;                                    // break out of the while loop
         }
         
@@ -325,6 +327,7 @@ void loop() {
           }
           currentLine = "";                         // reset current line to prepare for next request
           client.println();                         // The HTTP response ends with a blank line:
+          count = 0;                                // reset inactivity counter
           break;                                    // break out of the while loop
         }
         
@@ -370,6 +373,7 @@ void loop() {
           }
           currentLine = "";                         // reset current line to prepare for next request
           client.println();                         // The HTTP response ends with a blank line:
+          count = 0;                                // reset inactivity counter
           break;                                    // break out of the while loop
         }
                 
@@ -415,13 +419,18 @@ void loop() {
           }
           currentLine = "";                         // reset current line to prepare for next request
           client.println();                         // The HTTP response ends with a blank line:
+          count = 0;                                // reset inactivity counter
           break;                                    // break out of the while loop
         }
       }
     }
 
     // close the connection:
-    client.stop();
+    client.stop();  
   }
+  if (count >= 30000000){
+    digitalWrite(9, LOW);                           // if there is no client request for 5 minutes the unit resets itself
+  }
+  count++;
 }
 
