@@ -243,40 +243,18 @@ void loop() {
          }
         
         if (currentLine.endsWith("GET /X")) {
-          
           // User requested data, Send header
-          
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
           colabel = X + nl;
           client.print(colabel);                    // set column label
-         
-          int l = 0;                                // initialize outer loop counter
+          short l = 0;                                // initialize outer loop counter
           while (l != cnt3){                    
-            int k=0;                                // initialize mid loop counter
+            short k=0;                                // initialize mid loop counter
             while (k != cnt2){  
               String csv = "";                      // initialize to blank string
-              int j = 1;                            // Initialize loop inner loop counter (must be 1 to hold data in array position 1) 
-              int c1 = cnt1 - 1;                    // first loop will be two less than total number of inner loop samples (j starts at one instead of zero)
-              while (j != c1){
-                datax[j] = analogRead(A0);          // Read x data
-                delayMicroseconds(q);               // Delay to ensure sample every .002 seconds (500Hz)
-                j++;
-              }
-              // take another sample 
-              datax[j] = analogRead(A0);                
-              
-              // place integer data into comma spaced string cnt1 is chosed so that the transfer will take q microseconds
-              
-              j = 1;                                // Use the same counter to transfer from array to string
-              while (j != cnt1) {
-                csv = csv + String(datax[j])+ nl;
-                j ++;
-              }
-              //read one more sample
-              datax[j] = analogRead(A0);
-              csv = csv + String(datax[j]) + nl;     
+              csv = data_read('X'); 
               client.print(csv);                    // print the data to the IP address (this should also take q microseconds)
               k++;                                  // increment the middle loop
             }
@@ -286,43 +264,21 @@ void loop() {
           client.println();                         // The HTTP response ends with a blank line:
           count = 0;                                // reset inactivity counter
           break;                                    // break out of the while loop
-        }
-        
+        }        
+
         if (currentLine.endsWith("GET /Y")) {
-          
           // User requested data, Send header
-          
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
           colabel = Y + nl;
           client.print(colabel);                    // set column label
-         
-          int l = 0;                                // initialize outer loop counter
+          short l = 0;                                // initialize outer loop counter
           while (l != cnt3){                    
-            int k=0;                                // initialize mid loop counter
+            short k=0;                                // initialize mid loop counter
             while (k != cnt2){  
               String csv = "";                      // initialize to blank string
-              int j = 1;                            // Initialize loop inner loop counter (must be 1 to hold data in array position 1) 
-              int c1 = cnt1 - 1;                    // first loop will be two less than total number of inner loop samples (j starts at one instead of zero)
-              while (j != c1){
-                datay[j] = analogRead(A1);          // Read y data
-                delayMicroseconds(q);               // Delay to ensure sample every .002 seconds (500Hz)
-                j++;
-              }
-              // take another sample 
-              datay[j] = analogRead(A1);                
-              
-              // place integer data into comma spaced string cnt1 is chosed so that the transfer will take q microseconds
-              
-              j = 1;                                // Use the same counter to transfer from array to string
-              while (j != cnt1) {
-                csv = csv + String(datay[j])+ nl;
-                j ++;
-              }
-              //read one more sample
-              datay[j] = analogRead(A1);
-              csv = csv + String(datay[j]) + nl;     
+              csv = data_read('Y'); 
               client.print(csv);                    // print the data to the IP address (this should also take q microseconds)
               k++;                                  // increment the middle loop
             }
@@ -333,42 +289,20 @@ void loop() {
           count = 0;                                // reset inactivity counter
           break;                                    // break out of the while loop
         }
-                
+
         if (currentLine.endsWith("GET /Z")) {
-          
           // User requested data, Send header
-          
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
           colabel = Z + nl;
           client.print(colabel);                    // set column label
-         
-          int l = 0;                                // initialize outer loop counter
+          short l = 0;                                // initialize outer loop counter
           while (l != cnt3){                    
-            int k=0;                                // initialize mid loop counter
+            short k=0;                                // initialize mid loop counter
             while (k != cnt2){  
               String csv = "";                      // initialize to blank string
-              int j = 1;                            // Initialize loop inner loop counter (must be 1 to hold data in array position 1) 
-              int c1 = cnt1 - 1;                    // first loop will be two less than total number of inner loop samples (j starts at one instead of zero))
-              while (j != c1){
-                dataz[j] = analogRead(A2);          // Read z data
-                delayMicroseconds(q);               // Delay to ensure sample every .002 seconds (500Hz)
-                j++;
-              }
-              // take another sample 
-              dataz[j] = analogRead(A2);                
-              
-              // place integer data into comma spaced string cnt1 is chosed so that the transfer will take q microseconds
-              
-              j = 1;                                // Use the same counter to transfer from array to string
-              while (j != cnt1) {
-                csv = csv + String(dataz[j])+ nl;
-                j ++;
-              }
-              //read one more sample
-              dataz[j] = analogRead(A2);
-              csv = csv + String(dataz[j]) + nl;    
+              csv = data_read('Z'); 
               client.print(csv);                    // print the data to the IP address (this should also take q microseconds)
               k++;                                  // increment the middle loop
             }
@@ -378,7 +312,7 @@ void loop() {
           client.println();                         // The HTTP response ends with a blank line:
           count = 0;                                // reset inactivity counter
           break;                                    // break out of the while loop
-        }
+        } 
       }
     }
 
@@ -391,6 +325,43 @@ void loop() {
   count++;
 }
 
+// Data read function.  Reads one axis only (X,Y,or Z)
+String data_read(char axis) {
+  short pin;
+  short d = 1962;
+  String csv = "";
+  short data[25];
+  short j = 1;                            // Initialize loop inner loop counter (must be 1 to hold data in array position 1) 
+  short c1 = 24;                          // first loop will be two less than total number of inner loop samples (j starts at one instead of zero))
+  if (axis == 'X'){
+    pin = 0;
+  }
+  else if (axis == 'Y'){
+    pin = 1;
+  }
+  else if (axis == 'Z'){
+    pin = 2;
+  }
+  while (j != c1){
+    data[j] = analogRead(pin);          // Read z data
+    delayMicroseconds(d);               // Delay to ensure sample every .002 seconds (500Hz)
+    j++;
+  }
+  // take another sample 
+  data[j] = analogRead(pin);                
+  // place integer data into comma spaced string c1 is chosed so that the transfer will take d microseconds
+  j = 1;                                // Use the same counter to transfer from array to string
+  while (j != c1+1) {
+    csv = csv + String(data[j])+ '\n';
+    j ++;
+  }
+  //read one more sample
+  data[j] = analogRead(pin);
+  csv = csv + String(data[j]) + '\n';
+  return (csv);  
+}
+
+// Self test function. Ensures that the accelerometer is hooked up properly.
 String Self_test() {
   // initialize variables
   short hi = 620;
