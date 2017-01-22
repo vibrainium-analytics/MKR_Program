@@ -39,9 +39,6 @@ short q = 1962;                     // sample delay for individual axis
 char nl = '\n';                     // new line character for column format 
 //char com = ',';                   // comma (for comma spaced values)
 char sp = ' ';                      // space character for formatting
-short hi = 620;                     // used to calculate self test values
-short lo = 186;                     // used to calculate self test values
-short zhi = 1240;                   // used to calculate self test values
 String colabel;                     // text file column label
 String X = "X-axis";                // X label
 String Y = "Y-axis";                // Y label
@@ -231,59 +228,19 @@ void loop() {
           digitalWrite(led, LOW);                   // turns the LED off
           count = 0;
         }
-        
-        if (currentLine.endsWith("GET /S")) {
-          
-          // User requested data, Send header
-          
+
+         if (currentLine.endsWith("GET /S")){
+          // User requested data, Send header 
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
-
-          bool pass = 0;                     
-          
-          // take neutral data reading
-          
-          datax[1] = analogRead(A0);
-          datay[1] = analogRead(A1);
-          dataz[1] = analogRead(A2);
-          
-          // Set pass parameters
-          
-          int xl = datax[1] - hi;
-          int xh = datax[1] - lo;
-          int yl = datay[1] + lo;
-          int yh = datay[1] + hi;
-          int zl = dataz[1] + lo;
-          int zh = dataz[1] + zhi;
-          digitalWrite(11, HIGH);                   // turn on self test pin
-          delayMicroseconds(q);                     // pause for reading to change
-          
-          // take self test readings and check 
-          
-          datax[2] = analogRead(A0);
-          datay[2] = analogRead(A1);
-          dataz[2] = analogRead(A2);
-          if (datax[2] > xl and datax[2] < xh){
-            if (datay[2] > yl and datay[2] < yh){
-              if (dataz[2] > zl and dataz[2] < zh){
-                pass = 1;
-                client.print("Self test passed<br>");
-                client.print(String(datax[2])+sp);
-                client.print(String(datay[2])+sp);
-                client.print(String(dataz[2]));
-              }
-            }
-          }
-          if (pass == 0){
-            client.print("Self test failed");
-          }
-          digitalWrite(11, LOW);                    // turn off self test
+          String message = Self_test();
+          client.print(message);
           currentLine = "";                         // reset current line to prepare for next request
           client.println();                         // The HTTP response ends with a blank line:
           count = 0;                                // reset inactivity counter
           break;                                    // break out of the while loop
-        }
+         }
         
         if (currentLine.endsWith("GET /X")) {
           
@@ -432,5 +389,49 @@ void loop() {
     digitalWrite(9, LOW);                           // if there is no client request for 5 minutes the unit resets itself
   }
   count++;
+}
+
+String Self_test() {
+  // initialize variables
+  short hi = 620;
+  short lo = 186;
+  short zhi = 1240;
+  String message = "";                            
+  // take neutral data reading        
+  short X = analogRead(A0);
+  short Y = analogRead(A1);
+  short Z = analogRead(A2);
+  // Set pass parameters
+  short xl = X - hi;
+  short xh = X - lo;
+  short yl = Y + lo;
+  short yh = Y + hi;
+  short zl = Z + lo;
+  short zh = Z + zhi;
+  digitalWrite(11, 1);                // turn on self test pin
+  delayMicroseconds(1000);               // pause for reading to change
+  // take self test readings and check         
+  X = analogRead(A0);
+  Y = analogRead(A1);
+  Z = analogRead(A2);
+  if (X > xl and X < xh){
+    if (Y > yl and Y < yh){
+      if (Z > zl and Z < zh){
+        message = "Self test passed<br>";
+        message = message + String(X)+' ' + String(Y)+ ' '+String(Z);
+      }
+      else{
+        message = "Self test failed Z";
+      }
+    }
+    else{
+      message = "Self test failed Y";  
+    }
+  }
+  else{
+    message = "Self test failed X";
+  }
+  digitalWrite(11, 0);                    // turn off self test
+  return(message);
 }
 
