@@ -54,7 +54,7 @@ void setup() {
   ADC->CTRLB.reg = ADC_CTRLB_PRESCALER_DIV16;       // Sets ADC clock delay (lowest recommended is 16 microseconds)
   pinMode(led, OUTPUT);                             // set the LED pin mode
   pinMode(9, OUTPUT);                               // digital pin used for reset feature
-  digitalWrite(9,HIGH);                             // pin must be high unless a reset is requested
+  digitalWrite(9,1);                                // pin must be on unless a reset is requested
   pinMode(11, OUTPUT);                              // digital pin used for accelerometer self test
 
 
@@ -325,16 +325,29 @@ void loop() {
   count++;
 }
 
-// Data read function.  Reads one axis only (X,Y,or Z)
+
+/* data_read function.  
+ * 
+ * Takes the value of the axis to read, takes 25 samples, writes them to a string separated by 
+ * new line characters, and returns the string. New line characters are selected for data 
+ * formatting into a text file.
+ * 
+ * The data read and string conversion are done separately because the string converstion takes 
+ * longer each time it is concatonated.  
+ * 
+ * By logging the data first the delay between samples is constant.
+ */
+ 
 String data_read(char axis) {
   short pin;
-  short d = 1962;
+  short d = 1962;                         // Delay setting for 500Hz sample rate
   String csv = "";
   short data[25];
   short j = 1;                            // Initialize loop inner loop counter (must be 1 to hold data in array position 1) 
-  short c1 = 24;                          // first loop will be two less than total number of inner loop samples (j starts at one instead of zero))
+  short c1 = 24;                          // loop will log 23 samples (1 to 24)
+  // set pin to read
   if (axis == 'X'){
-    pin = 0;
+    pin = 0;                  
   }
   else if (axis == 'Y'){
     pin = 1;
@@ -342,36 +355,47 @@ String data_read(char axis) {
   else if (axis == 'Z'){
     pin = 2;
   }
+  else {
+    csv = "error no axis selected";
+  }
+  // read first 23 samples
   while (j != c1){
-    data[j] = analogRead(pin);          // Read z data
-    delayMicroseconds(d);               // Delay to ensure sample every .002 seconds (500Hz)
+    data[j] = analogRead(pin);            // Read data
+    delayMicroseconds(d);                 // Delay to ensure sample every .002 seconds (500Hz)
     j++;
   }
-  // take another sample 
+  // read 24th sample 
   data[j] = analogRead(pin);                
-  // place integer data into comma spaced string c1 is chosed so that the transfer will take d microseconds
-  j = 1;                                // Use the same counter to transfer from array to string
+  // place integer data into string. the transfer will take d microseconds
+  j = 1;                                  // Use the same counter to transfer from array to string
   while (j != c1+1) {
     csv = csv + String(data[j])+ '\n';
     j ++;
   }
-  //read one more sample
+  //read 25th sample and write it to the string
   data[j] = analogRead(pin);
   csv = csv + String(data[j]) + '\n';
   return (csv);  
 }
 
-// Self test function. Ensures that the accelerometer is hooked up properly.
+/* Self test function. 
+ *  
+ *  Ensures that the accelerometer is wired properly.  The accelerometer output for 
+ *  each axis changes by a preset amount when the self test pin is activated.
+ *  The sensor is tested by checking that the change is within parameters.
+ *  A sensor status message is returned to the main program.
+ *  
+ */
 String Self_test() {
-  // initialize variables
+  // initialize self test parameters for 12 bit resolution.
   short hi = 620;
   short lo = 186;
   short zhi = 1240;
   String message = "";                            
   // take neutral data reading        
-  short X = analogRead(A0);
-  short Y = analogRead(A1);
-  short Z = analogRead(A2);
+  short X = analogRead(0);
+  short Y = analogRead(1);
+  short Z = analogRead(2);
   // Set pass parameters
   short xl = X - hi;
   short xh = X - lo;
@@ -379,17 +403,18 @@ String Self_test() {
   short yh = Y + hi;
   short zl = Z + lo;
   short zh = Z + zhi;
-  digitalWrite(11, 1);                // turn on self test pin
-  delayMicroseconds(1000);               // pause for reading to change
+  digitalWrite(11, 1);                      // turn on self test pin
+  delayMicroseconds(1000);                  // pause for sensor to adjust. 
   // take self test readings and check         
-  X = analogRead(A0);
-  Y = analogRead(A1);
-  Z = analogRead(A2);
+  X = analogRead(0);
+  Y = analogRead(1);
+  Z = analogRead(2);
   if (X > xl and X < xh){
     if (Y > yl and Y < yh){
       if (Z > zl and Z < zh){
         message = "Self test passed<br>";
-        message = message + String(X)+' ' + String(Y)+ ' '+String(Z);
+        // show passing values for user reference.
+        message = message + String(X)+' ' + String(Y)+ ' '+String(Z); 
       }
       else{
         message = "Self test failed Z";
@@ -402,7 +427,7 @@ String Self_test() {
   else{
     message = "Self test failed X";
   }
-  digitalWrite(11, 0);                    // turn off self test
+  digitalWrite(11, 0);                      // turn off self test pin
   return(message);
 }
 
