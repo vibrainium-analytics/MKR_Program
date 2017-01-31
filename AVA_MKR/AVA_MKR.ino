@@ -37,9 +37,7 @@ short datac[50];                    // holds combined axes samples
 short r = 1900;                     // sample delay for sampling 3 axes 
 short q = 1962;                     // sample delay for individual axis
 char nl = '\n';                     // new line character for column format 
-//char com = ',';                   // comma (for comma spaced values)
 char sp = ' ';                      // space character for formatting
-String colabel;                     // text file column label
 String X = "X-axis";                // X label
 String Y = "Y-axis";                // Y label
 String Z = "Z-axis";                // Z label
@@ -72,6 +70,7 @@ void setup() {
 }
 
 void loop() {
+  digitalWrite(led, HIGH);                  // turns the LED on
   digitalWrite(9,HIGH);                     // pin must be high unless a reset is requested
   WiFiClient client = server.available();   // listen for incoming clients
   if (client) {                             // if you get a client
@@ -97,8 +96,6 @@ void loop() {
             
             client.print("Click <a href=\"/A\">here</a> to request data from all three axes <br>");
             client.print("Click <a href=\"/C\">here</a> to request combined axes data<br>");
-            client.print("Click <a href=\"/H\">here</a> turn the LED on<br>");
-            client.print("Click <a href=\"/L\">here</a> turn the LED off<br>");
             client.print("Click <a href=\"/S\">here</a> to run accelerometer self test<br>");
             client.print("Click <a href=\"/X\">here</a> to request x axis data<br>");
             client.print("Click <a href=\"/Y\">here</a> to request y axis data<br>");
@@ -124,8 +121,6 @@ void loop() {
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
-          colabel = X + sp + Y + sp + Z + nl;       // set column labels for output
-          client.print(colabel);
           
           // data acquisition        
           int c2 = 2*cnt1;                          // calculate number of times to run inner loop (50)           
@@ -179,8 +174,6 @@ void loop() {
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
-          colabel = C + nl;                         // set column label for output
-          client.print(colabel);
          
           int l = 0;                                // initialize outer loop counter
           while (l != cnt3){                    
@@ -219,16 +212,6 @@ void loop() {
           break;                                    // break out of the while loop
         }
 
-        if (currentLine.endsWith("GET /H")) {
-          digitalWrite(led, HIGH);                  // turns the LED on
-          count = 0;
-        }
-        
-        if (currentLine.endsWith("GET /L")) {
-          digitalWrite(led, LOW);                   // turns the LED off
-          count = 0;
-        }
-
          if (currentLine.endsWith("GET /S")){
           // User requested data, Send header 
           client.println("HTTP/1.1 200 OK");
@@ -247,8 +230,6 @@ void loop() {
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
-          colabel = X + nl;
-          client.print(colabel);                    // set column label
           short l = 0;                                // initialize outer loop counter
           while (l != cnt3){                    
             short k=0;                                // initialize mid loop counter
@@ -271,8 +252,6 @@ void loop() {
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
-          colabel = Y + nl;
-          client.print(colabel);                    // set column label
           short l = 0;                                // initialize outer loop counter
           while (l != cnt3){                    
             short k=0;                                // initialize mid loop counter
@@ -295,8 +274,6 @@ void loop() {
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
-          colabel = Z + nl;
-          client.print(colabel);                    // set column label
           short l = 0;                                // initialize outer loop counter
           while (l != cnt3){                    
             short k=0;                                // initialize mid loop counter
