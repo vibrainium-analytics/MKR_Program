@@ -5,10 +5,10 @@
   As part of a wireless battery powered sensor package this program will sample values from a 
   3- axis accelerometer at 500 samples per second (500Hz)for one minute at a time. 
   
-  The program can sample axes one at a time, all three at once, or all three added together as a 
-  combined signal.  Additional features inclued an accelerometer self test feature and a reset 
-  option, other diagnostics features are under development designed to allow the user to determine 
-  the operating conditions of the sensor package.
+  The program can sample axes one at a time, or all three at once.  Additional features include:
+    an accelerometer self test feature 
+    a timout reset if no requests are recieved for 2.5 minutes
+    one minute countdown/delay to allow vehicle to reach a desired state prior to data acquisition
 
   The sampled values are transmitted over a Wi-Fi connection to a local IP address 
   where the data can be viewed. For example:
@@ -22,27 +22,22 @@
 #include <SPI.h> 
 #include <WiFi101.h>
 
-int led =  LED_BUILTIN;             // used to turn LED on and off
+int led =  LED_BUILTIN;             // used to turn LED on 
 int count = 0;                      // inactivity counter
 char ssid[] = "wifi101-network";    // wireless access point name
 String currentLine;                 // stores incomming data
 short cnt3 = 60;                    // number of times to run outer loop
 short cnt2 = 20;                    // number of times to run middle loop
-short cnt1 = 25;                    // number of times to run inner loop
+short cnt1 = 25;                    // number of times to run inner loop when sampling one axis
 short cnta = 10;                    // number of times to run inner loop sampling all 3 axes                         
 short datax[50];                    // holds x axis samples 
 short datay[50];                    // holds y axis samples
 short dataz[50];                    // holds z axis samples
 short r = 1900;                     // sample delay for sampling 3 axes 
-short q = 1962;                     // sample delay for individual axis
-char nl = '\n';                     // new line character for column format 
-char sp = ' ';                      // space character for formatting
-String X = "X-axis";                // X label
-String Y = "Y-axis";                // Y label
-String Z = "Z-axis";                // Z label                       
-
+char nl = '\n';                     // new line character for formatting 
+char sp = ' ';                      // space character for formatting                     
 int status = WL_IDLE_STATUS;
-WiFiServer server(80);                              // Server will be on port 80
+WiFiServer server(80);              // Server will be on port 80
 
 void setup() {
 
@@ -52,37 +47,28 @@ void setup() {
   pinMode(9, OUTPUT);                               // digital pin used for reset feature
   digitalWrite(9,1);                                // pin must be on unless a reset is requested
   pinMode(11, OUTPUT);                              // digital pin used for accelerometer self test
-
-
-  // Create open network. (no password required)
-  
-  status = WiFi.beginAP(ssid);
-
-  // wait 10 seconds for connection:
-  
-  delay(10000);
-
-  // start the web server
-  
-  server.begin();
+  status = WiFi.beginAP(ssid);                      // Create open network. (no password required)
+  delay(10000);                                     // wait 10 seconds for connection:
+  server.begin();                                   // start the web server
 }
 
 void loop() {
-  digitalWrite(led, HIGH);                  // turns the LED on
-  digitalWrite(9,HIGH);                     // pin must be high unless a reset is requested
-  WiFiClient client = server.available();   // listen for incoming clients
-  if (client) {                             // if you get a client
-    currentLine = "";                       // initialize incoming data string
-    while (client.connected()) {
-      // loop while the client is connected
-      if (client.available()) {             // if there are bytes to read from the client,
-        char in = client.read();            // read a byte
-        if (in == '\n') {                   // check if the byte is a newline character
+  
+  digitalWrite(led, HIGH);                          // turns the LED on
+  digitalWrite(9,HIGH);                             // pin must be high unless a reset is requested
+  WiFiClient client = server.available();           // listen for incoming clients
+  if (client) {                                     
+    currentLine = "";                               // initialize incoming data string
+    while (client.connected()) {                    // loop while the client is connected  
+      if (client.available()) {                     // if there are bytes to read from the client,
+        char in = client.read();                    // read a byte
+        if (in == '\n') {                           // check if the byte is a newline character
 
           // if the current line length is zero the line is blank and you got two newline characters in a row.
           // that's the end of the client HTTP request, so send a response:
           
           if (currentLine.length() == 0) {
+            
             // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
             // then a content-type so the client knows what's coming, followed by a blank line
             
@@ -99,18 +85,16 @@ void loop() {
             client.print("Click <a href=\"/Y\">here</a> to request y axis data<br>");
             client.print("Click <a href=\"/Z\">here</a> to request z axis data<br>");
             
-            client.println();               // The HTTP response ends with a blank line:
-            break;                          // break out of the while loop
+            client.println();                       // The HTTP response ends with a blank line:
+            break;                                  // break out of the while loop
           }
           else {
-            currentLine = "";               // after recieving a newline, clear currentLine
+            currentLine = "";                       // after recieving a newline, clear currentLine
           }
         }
-        else if (in != '\r') {              // if you got anything else but a carriage return
-          currentLine += in;                // add it to the end of the currentLine (this is input from the user)         
+        else if (in != '\r') {                      // if you got anything else but a carriage return
+          currentLine += in;                        // add it to the end of the currentLine (this is input from the user)         
         }
-
-        // Check the user input 
 
         if (currentLine.endsWith("GET /A")) {
           
@@ -121,6 +105,7 @@ void loop() {
           client.println();
           
           // data acquisition        
+          
           int c2 = 2*cnt1;                          // calculate number of times to run inner loop (50)           
           int l = 0;                                // initialize outer loop counter
           while (l != cnt3){                    
@@ -134,16 +119,16 @@ void loop() {
               int j = 1;                            // Initialize loop inner loop counter 
               int c1 = cnta;                        
               while (j != c1){
-                // read individual axes
                 j++;
                 delayMicroseconds(r);               // Delay to ensure sample every .002 seconds (500Hz)
                 datax[j] = analogRead(A0);
                 datay[j] = analogRead(A1);
                 dataz[j] = analogRead(A2);              
               }
-              // place integer data into comma spaced string cnt1 is chosen so that the transfer will take r microseconds
               
-              j = 1;                                // Use the same counter to transfer from array to string
+              // place integer data into string. cnta is chosen so that the transfer will take r microseconds
+              
+              j = 1;                                
               while (j != cnta) {
                 csv = csv + String(datax[j])+ sp + String(datay[j]) + sp + String(dataz[j]) + nl;
                 j ++;
@@ -153,10 +138,10 @@ void loop() {
               datay[j] = analogRead(A1);
               dataz[j] = analogRead(A2);
               csv = csv + String(datax[j])+ sp + String(datay[j]) + sp + String(dataz[j]) + nl;
-              client.print(csv);                    // print the data to the IP address (this should also take q microseconds)
-              k++;                                  // increment the middle loop
+              client.print(csv);                    // print the data to the IP address (this should also take r microseconds)
+              k++;                                  
             }
-            l++;                                    // increment the outer loop
+            l++;                                    
           }
           currentLine = "";                         // reset current line to prepare for next request
           client.println();                         // The HTTP response ends with a blank line:
@@ -165,9 +150,13 @@ void loop() {
         }
 
         if (currentLine.endsWith("GET /D")) {
+          
+          //Header
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
+
+          // one minute countdown
           client.print("60<br>");
           delay(10000);
           client.print("50<br>");
@@ -181,35 +170,40 @@ void loop() {
           client.print("10<br>");
           delay(10000);
           client.print("0<br>");
+          currentLine = "";
           client.println();
-          count = 0;
+          count = 0;                                // reset inactivity counter
           break;        
         }
           
          if (currentLine.endsWith("GET /S")){
+          
           // User requested data, Send header 
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
-          String message = Self_test();
+          
+          String message = Self_test();             // Get results from Self_test function
           client.print(message);
           currentLine = "";                         // reset current line to prepare for next request
-          client.println();                         // The HTTP response ends with a blank line:
+          client.println();                         
           count = 0;                                // reset inactivity counter
-          break;                                    // break out of the while loop
+          break;                                    
          }
         
         if (currentLine.endsWith("GET /X")) {
+          
           // User requested data, Send header
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
-          short l = 0;                                // initialize outer loop counter
+          
+          short l = 0;                              // initialize outer loop counter
           while (l != cnt3){                    
-            short k=0;                                // initialize mid loop counter
+            short k=0;                              // initialize mid loop counter
             while (k != cnt2){  
               String csv = "";                      // initialize to blank string
-              csv = data_read('X'); 
+              csv = data_read('X');                 // get results from data_read function
               client.print(csv);                    // print the data to the IP address (this should also take q microseconds)
               k++;                                  // increment the middle loop
             }
@@ -226,12 +220,12 @@ void loop() {
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
-          short l = 0;                                // initialize outer loop counter
+          short l = 0;                              // initialize outer loop counter
           while (l != cnt3){                    
-            short k=0;                                // initialize mid loop counter
+            short k=0;                              // initialize mid loop counter
             while (k != cnt2){  
               String csv = "";                      // initialize to blank string
-              csv = data_read('Y'); 
+              csv = data_read('Y');                 // get results from data_read function
               client.print(csv);                    // print the data to the IP address (this should also take q microseconds)
               k++;                                  // increment the middle loop
             }
@@ -248,12 +242,12 @@ void loop() {
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
-          short l = 0;                                // initialize outer loop counter
+          short l = 0;                              // initialize outer loop counter
           while (l != cnt3){                    
-            short k=0;                                // initialize mid loop counter
+            short k=0;                              // initialize mid loop counter
             while (k != cnt2){  
               String csv = "";                      // initialize to blank string
-              csv = data_read('Z'); 
+              csv = data_read('Z');                 // get results from data_read function
               client.print(csv);                    // print the data to the IP address (this should also take q microseconds)
               k++;                                  // increment the middle loop
             }
@@ -270,7 +264,7 @@ void loop() {
     // close the connection:
     client.stop();  
   }
-  if (count >= 15000000){
+  if (count >= 15000000){                           // approximate number of loops in 2.5 minutes
     digitalWrite(9, LOW);                           // if there is no client request for 2.5 minutes the unit resets itself
   }
   count++;
@@ -279,13 +273,12 @@ void loop() {
 
 /* data_read function.  
  * 
- * Takes the value of the axis to read, takes 25 samples, writes them to a string separated by 
+ * Recieves the value of the axis to read, logs 25 samples, writes them to a string separated by 
  * new line characters, and returns the string. New line characters are selected for data 
  * formatting into a text file.
  * 
  * The data read and string conversion are done separately because the string converstion takes 
  * longer each time it is concatonated.  
- * 
  * By logging the data first the delay between samples is constant.
  */
  
